@@ -21,6 +21,8 @@ class ActualizarTareaRequest extends FormRequest
             'prioridad'       => ['sometimes', 'required', Rule::in(Tarea::PRIORIDADES)],
             'estado'          => ['sometimes', 'required', Rule::in(Tarea::ESTADOS)],
             'horas_estimadas' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+            'tags'            => ['nullable', 'array'],
+            'tags.*'          => ['integer', 'exists:tags,id'],
         ];
     }
 

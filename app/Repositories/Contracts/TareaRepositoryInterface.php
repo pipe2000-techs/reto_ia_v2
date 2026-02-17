@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 interface TareaRepositoryInterface
 {
     public function obtenerPorProyecto(int $proyecto_id): Collection;
+    public function obtenerPorProyectoConSubtareasYTags(int $proyecto_id): Collection;
     public function buscarPorId(int $id): Tarea;
     public function crear(array $datos): Tarea;
     public function actualizar(Tarea $tarea, array $datos): Tarea;

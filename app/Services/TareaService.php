@@ -10,7 +10,8 @@ use Illuminate\Validation\ValidationException;
 class TareaService
 {
     public function __construct(
-        private TareaRepositoryInterface $tarea_repository
+        private TareaRepositoryInterface $tarea_repository,
+        private TagService $tag_service
     ) {}
 
     public function listarPorProyecto(int $proyecto_id): Collection
@@ -18,9 +19,23 @@ class TareaService
         return $this->tarea_repository->obtenerPorProyecto($proyecto_id);
     }
 
+    public function listarPorProyectoConSubtareasYTags(int $proyecto_id): Collection
+    {
+        return $this->tarea_repository->obtenerPorProyectoConSubtareasYTags($proyecto_id);
+    }
+
     public function guardar(array $datos): Tarea
     {
-        return $this->tarea_repository->crear($datos);
+        $tag_ids = $datos['tags'] ?? [];
+        unset($datos['tags']);
+
+        $tarea = $this->tarea_repository->crear($datos);
+
+        if (!empty($tag_ids)) {
+            $this->tag_service->sincronizarTagsTarea($tarea, $tag_ids);
+        }
+
+        return $tarea->load('tags');
     }
 
     public function actualizar(Tarea $tarea, array $datos): Tarea
@@ -29,11 +44,25 @@ class TareaService
             $this->validarTransicionEstado($tarea->estado, $datos['estado']);
         }
 
-        return $this->tarea_repository->actualizar($tarea, $datos);
+        $tag_ids = array_key_exists('tags', $datos) ? $datos['tags'] : null;
+        unset($datos['tags']);
+
+        $tarea = $this->tarea_repository->actualizar($tarea, $datos);
+
+        if ($tag_ids !== null) {
+            $this->tag_service->sincronizarTagsTarea($tarea, $tag_ids);
+        }
+
+        return $tarea->load('tags');
     }
 
     public function eliminar(Tarea $tarea): void
     {
+        // Eliminar subtareas explícitamente antes de eliminar la tarea padre
+        foreach ($tarea->subtareas as $subtarea) {
+            $this->tarea_repository->eliminar($subtarea);
+        }
+
         $this->tarea_repository->eliminar($tarea);
     }
 

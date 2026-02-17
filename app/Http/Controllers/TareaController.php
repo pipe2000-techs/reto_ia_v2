@@ -47,11 +47,15 @@ class TareaController extends Controller
 
     public function destroy(Tarea $tarea): JsonResponse
     {
+        $tarea->load('subtareas');
+        $subtarea_ids = $tarea->subtareas->pluck('id')->toArray();
+
         $this->tarea_service->eliminar($tarea);
 
         return response()->json([
-            'success' => true,
-            'mensaje' => 'Tarea eliminada correctamente.',
+            'success'      => true,
+            'mensaje'      => 'Tarea eliminada correctamente.',
+            'subtarea_ids' => $subtarea_ids,
         ]);
     }
 }

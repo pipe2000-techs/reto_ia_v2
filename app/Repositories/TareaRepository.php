@@ -11,6 +11,24 @@ class TareaRepository implements TareaRepositoryInterface
     public function obtenerPorProyecto(int $proyecto_id): Collection
     {
         return Tarea::where('proyecto_id', $proyecto_id)
+            ->whereNull('tarea_padre_id')
+            ->orderByRaw("FIELD(prioridad, 'alta', 'media', 'baja')")
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function obtenerPorProyectoConSubtareasYTags(int $proyecto_id): Collection
+    {
+        return Tarea::where('proyecto_id', $proyecto_id)
+            ->whereNull('tarea_padre_id')
+            ->with([
+                'subtareas' => function ($query) {
+                    $query->orderByRaw("FIELD(prioridad, 'alta', 'media', 'baja')")
+                          ->orderBy('created_at', 'desc')
+                          ->with('tags');
+                },
+                'tags',
+            ])
             ->orderByRaw("FIELD(prioridad, 'alta', 'media', 'baja')")
             ->orderBy('created_at', 'desc')
             ->get();
